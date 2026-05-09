@@ -1,6 +1,6 @@
 """
 Recommendation engine for SHL assessments.
-Uses FAISS similarity search over Gemini embeddings.
+Uses FAISS similarity search over BGE embeddings (BAAI/bge-large-en-v1.5).
 """
 
 import numpy as np
