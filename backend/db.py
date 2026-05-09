@@ -1,6 +1,6 @@
 """
 FAISS index management for the SHL Recommendation Engine.
-Builds and caches a vector index from assessment data + Gemini embeddings.
+Builds and caches a vector index from assessment data + BGE embeddings.
 """
 
 import pandas as pd
@@ -257,54 +257,23 @@ def create_index():
 
 
 def _generate_embeddings(df: pd.DataFrame) -> np.ndarray:
-    """Generate embeddings for all assessment rows with rate-limit handling."""
-    import time
+    """Generate embeddings for all assessment rows using local BGE model."""
 
     print(f"🔄 Generating embeddings for {len(df)} assessments...")
     embeddings = []
 
-    # Check for partial progress
-    partial_path = EMBEDDING_PATH + ".partial.npy"
-    start_idx = 0
-    if os.path.exists(partial_path):
-        partial = np.load(partial_path)
-        embeddings = list(partial)
-        start_idx = len(embeddings)
-        print(f"📎 Resuming from checkpoint at index {start_idx}...")
-
-    for i in range(start_idx, len(df)):
+    for i in range(len(df)):
         row = df.iloc[i]
         text = _build_embedding_text(row)
-
-        # Retry with exponential backoff on rate limit errors
-        for attempt in range(5):
-            try:
-                emb = get_doc_embedding(text)
-                embeddings.append(emb)
-                break
-            except Exception as e:
-                if "429" in str(e) or "quota" in str(e).lower():
-                    wait = 2 ** attempt * 5  # 5s, 10s, 20s, 40s, 80s
-                    print(f"   ⏳ Rate limited — waiting {wait}s (attempt {attempt + 1}/5)...")
-                    time.sleep(wait)
-                else:
-                    raise
+        emb = get_doc_embedding(text)
+        embeddings.append(emb)
 
         # Progress update
         if (i + 1) % 20 == 0:
             print(f"   Embedded {i + 1}/{len(df)}...")
-            # Save partial progress every 20 items
-            np.save(partial_path, np.array(embeddings, dtype="float32"))
-
-        # Small delay to stay under 100 req/min limit
-        time.sleep(0.7)
 
     arr = np.array(embeddings, dtype="float32")
     np.save(EMBEDDING_PATH, arr)
-
-    # Clean up partial file
-    if os.path.exists(partial_path):
-        os.remove(partial_path)
 
     print(f"💾 Embeddings saved to {EMBEDDING_PATH}")
     return arr

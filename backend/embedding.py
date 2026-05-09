@@ -1,44 +1,41 @@
 """
-Gemini embedding utilities for the SHL Recommendation Engine.
-Uses Google's text-embedding-004 model for both document and query embeddings.
+Embedding utilities for the SHL Recommendation Engine.
+Uses BAAI/bge-large-en-v1.5 via sentence-transformers for local inference.
+No API key required — model weights are downloaded and cached locally.
 """
 
-import google.generativeai as genai
-import os
-from dotenv import load_dotenv
+from sentence_transformers import SentenceTransformer
 
-# Load .env from the project root (one level up from backend/)
-_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
-_PROJECT_ROOT = os.path.dirname(_BACKEND_DIR)
-load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
+# Load model once at module level (downloads ~1.3 GB on first run, cached after)
+_MODEL_NAME = "BAAI/bge-large-en-v1.5"
+_model = None
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise RuntimeError(
-        "GEMINI_API_KEY not found. "
-        "Create a .env file in the project root with: GEMINI_API_KEY=your_key"
-    )
+# BGE models use an instruction prefix for queries (not for documents)
+_QUERY_INSTRUCTION = "Represent this sentence for searching relevant passages: "
 
-genai.configure(api_key=GEMINI_API_KEY)
 
-EMBEDDING_MODEL = "models/gemini-embedding-001"
+def _get_model() -> SentenceTransformer:
+    """Lazy-load the embedding model on first use."""
+    global _model
+    if _model is None:
+        print(f"🔄 Loading embedding model: {_MODEL_NAME}...")
+        _model = SentenceTransformer(_MODEL_NAME)
+        print(f"✅ Model loaded (dim={_model.get_embedding_dimension()})")
+    return _model
 
 
 def get_doc_embedding(text: str) -> list[float]:
     """Generate an embedding for a document (assessment data)."""
-    result = genai.embed_content(
-        model=EMBEDDING_MODEL,
-        content=text,
-        task_type="retrieval_document",
-    )
-    return result["embedding"]
+    model = _get_model()
+    embedding = model.encode(text, normalize_embeddings=True)
+    return embedding.tolist()
 
 
 def get_query_embedding(text: str) -> list[float]:
     """Generate an embedding for a user query (job description)."""
-    result = genai.embed_content(
-        model=EMBEDDING_MODEL,
-        content=text,
-        task_type="retrieval_query",
+    model = _get_model()
+    # BGE models prepend an instruction for query embeddings
+    embedding = model.encode(
+        _QUERY_INSTRUCTION + text, normalize_embeddings=True
     )
-    return result["embedding"]
+    return embedding.tolist()

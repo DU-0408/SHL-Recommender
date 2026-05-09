@@ -268,7 +268,7 @@ export default function Home() {
 
       {/* ── Footer ── */}
       <footer>
-        Built with · FastAPI · Uvicorn · Pandas · Numpy · FAISS · Playwright · Gemini Embeddings&emsp;·&emsp;Data from{" "}
+        Built with · FastAPI · Uvicorn · Pandas · Numpy · FAISS · Playwright · BGE Embeddings&emsp;·&emsp;Data from{" "}
         <a
           href="https://www.shl.com/solutions/products/product-catalog/"
           target="_blank"

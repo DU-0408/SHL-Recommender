@@ -3,6 +3,5 @@ uvicorn[standard]
 pandas
 numpy
 faiss-cpu
-google-generativeai
-python-dotenv
+sentence-transformers
 playwright
