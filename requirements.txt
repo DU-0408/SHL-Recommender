@@ -1,9 +1,8 @@
 fastapi
 uvicorn[standard]
-streamlit
 pandas
 numpy
 faiss-cpu
 google-generativeai
 python-dotenv
-requests
+playwright

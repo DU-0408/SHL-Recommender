@@ -1,21 +1,14 @@
 """
 FastAPI application for the SHL Assessment Recommendation Engine.
 Provides REST API endpoints for assessment recommendations.
-Serves the standalone HTML frontend at root (/).
+The frontend is a separate Next.js app (see frontend/).
 """
 
-import os
 import traceback
 from fastapi import FastAPI, Query, HTTPException
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from .recommender import recommend
-
-# Path to frontend
-_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
-_PROJECT_ROOT = os.path.dirname(_BACKEND_DIR)
-_FRONTEND_HTML = os.path.join(_PROJECT_ROOT, "frontend", "index.html")
 
 app = FastAPI(
     title="SHL Assessment Recommendation Engine",
@@ -54,15 +47,11 @@ class RecommendResponse(BaseModel):
 
 class RecommendRequest(BaseModel):
     query: str
-    top_k: int = 10
+    top_k: int = Field(10, ge=1, le=20, description="Number of results to return")
 
 
 # --- Endpoints ---
 
-@app.get("/", include_in_schema=False)
-def serve_frontend():
-    """Serve the standalone HTML frontend."""
-    return FileResponse(_FRONTEND_HTML, media_type="text/html")
 
 
 @app.get("/health")
@@ -89,7 +78,12 @@ def recommend_get(
 @app.post("/recommend", response_model=RecommendResponse)
 def recommend_post(request: RecommendRequest):
     """Recommend SHL assessments based on a text query (POST)."""
-    results = recommend(request.query, top_k=request.top_k)
-    return RecommendResponse(
-        query=request.query, count=len(results), assessments=results
-    )
+    try:
+        results = recommend(request.query, top_k=request.top_k)
+        return RecommendResponse(
+            query=request.query, count=len(results), assessments=results
+        )
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"❌ Error in POST /recommend: {e}\n{tb}")
+        raise HTTPException(status_code=500, detail=str(e))

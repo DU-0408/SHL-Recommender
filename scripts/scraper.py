@@ -1,5 +1,11 @@
 from playwright.sync_api import sync_playwright
 import csv
+import os
+
+# Paths relative to this script's location
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+RAW_DATA_PATH = os.path.join(PROJECT_ROOT, "data", "raw_data.csv")
 
 def scrape_shl_catalog_all_pages(start_url):
     with sync_playwright() as p:
@@ -73,7 +79,7 @@ catalog_data = scrape_shl_catalog_all_pages(start_url)
 
 # Save to CSV
 if catalog_data:
-    with open('../data/raw_data.csv', 'w', newline='', encoding='utf-8') as f:
+    with open(RAW_DATA_PATH, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=catalog_data[0].keys())
         writer.writeheader()
         writer.writerows(catalog_data)
