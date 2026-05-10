@@ -40,8 +40,8 @@ def recommend(query: str, top_k: int = 10) -> list[dict]:
         query_emb = query_emb / norm
 
     # Search (request more than top_k since we filter by threshold)
-    search_k = min(top_k * 2, _index.ntotal)
-    scores, indices = _index.search(query_emb, search_k)
+    search_k = min(top_k * 2, _index.ntotal)  # type: ignore[union-attr]
+    scores, indices = _index.search(query_emb, search_k)  # type: ignore[union-attr]
 
     # Build results — filter by threshold and limit to top_k
     results = []
@@ -53,7 +53,7 @@ def recommend(query: str, top_k: int = 10) -> list[dict]:
         if len(results) >= top_k:
             break
 
-        row = _df.iloc[idx]
+        row = _df.iloc[idx]  # type: ignore[union-attr]
         results.append({
             "rank": len(results) + 1,
             "name": row["name"],

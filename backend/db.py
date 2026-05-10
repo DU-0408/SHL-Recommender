@@ -247,7 +247,7 @@ def create_index():
     # Build FAISS index (inner product = cosine sim on normalized vectors)
     dim = embeddings.shape[1]
     index = faiss.IndexFlatIP(dim)
-    index.add(embeddings)
+    index.add(embeddings)  # type: ignore[call-arg]
 
     # Cache the FAISS index
     faiss.write_index(index, INDEX_PATH)
