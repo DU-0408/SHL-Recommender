@@ -28,6 +28,7 @@ node_modules/
 # IDE
 .vscode/
 .idea/
+pyrefly.toml
 
 # OS
 .DS_Store
